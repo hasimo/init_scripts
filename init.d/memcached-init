@@ -1,0 +1,91 @@
+#!/bin/bash
+#
+# Init file for memcached
+#
+# Written by Dag Wieërs <dag@wieers.com>
+#
+# chkconfig: - 80 12
+# description: Distributed memory caching daemon
+#
+# processname: memcached
+# config: /etc/sysconfig/memcached
+# config: /etc/memcached.conf
+
+source /etc/rc.d/init.d/functions
+
+### Default variables
+PORT="11211"
+USER="nobody"
+MAXCONN="1024"
+CACHESIZE="64"
+OPTIONS=""
+SYSCONFIG="/etc/sysconfig/memcached"
+pid_file="/var/run/memcached.pid"
+PATH=/usr/local/bin:$PATH
+export PATH
+
+### Read configuration
+[ -r "$SYSCONFIG" ] && source "$SYSCONFIG"
+
+RETVAL=0
+prog="memcached"
+desc="Distributed memory caching"
+
+start() {
+	echo -n $"Starting $desc ($prog): "
+	daemon $prog -d -p $PORT -P $pid_file -u $USER -c $MAXCONN -m $CACHESIZE $OPTIONS
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$prog
+	return $RETVAL
+}
+
+stop() {
+	echo -n $"Shutting down $desc ($prog): "
+	killproc $prog
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$prog
+	return $RETVAL
+}
+
+restart() {
+	stop
+	start
+}
+
+reload() {
+	echo -n $"Reloading $desc ($prog): "
+	killproc $prog -HUP
+	RETVAL=$?
+	echo
+	return $RETVAL
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	restart
+	;;
+  condrestart)
+	[ -e /var/lock/subsys/$prog ] && restart
+	RETVAL=$?
+	;;
+  reload)
+	reload
+	;;
+  status)
+	status $prog
+	RETVAL=$?
+	;;
+   *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+	RETVAL=1
+esac
+
+exit $RETVAL

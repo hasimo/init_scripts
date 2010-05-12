@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# nginx           Update notification daemon
+#
+# Author:       Jeremy Katz <katzj@redhat.com>
+#
+# chkconfig:	345 97 03
+#
+# description:  This is a daemon which periodically checks for updates \
+#               and can send notifications via mail, dbus or syslog.
+# processname:  nginx
+# config: /etc/nginx/nginx.conf
+# pidfile: /var/run/nginx.pid
+#
+
+### BEGIN INIT INFO
+# Provides: nginx
+# Required-Start: $syslog $local_fs messagebus
+# Required-Stop: $syslog $local_fs messagebus
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: 
+# Description: 
+#
+### END INIT INFO
+
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+PATH=/usr/local/sbin:$PATH
+export PATH
+RETVAL=0
+
+start() {
+	echo -n $"Starting nginx: "
+	daemon +19 nginx
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/nginx
+}
+
+stop() {
+	echo -n $"Stopping nginx: "
+	killproc nginx
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/nginx
+}
+
+restart() {
+	stop
+	start
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop) 
+	stop
+	;;
+  restart|force-reload|reload)
+	restart
+	;;
+  condrestart|try-restart)
+	[ -f /var/lock/subsys/nginx ] && restart
+	;;
+  status)
+	status nginx
+	RETVAL=$?
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart}"
+	exit 1
+esac
+
+exit $RETVAL
